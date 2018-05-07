@@ -26,6 +26,7 @@ function edge(from, to, gain) {
 
 function main(edgesList, numberOfNodes, source, sink) {
     var edgeList = edgesList;
+    var adjList = fromEdgeListToAdjList(edgeList, numberOfNodes);
     var sourceNode = source;
     var sinkNode = sink;
     paths = [];
@@ -33,7 +34,6 @@ function main(edgesList, numberOfNodes, source, sink) {
     mergedLoops = [];
 
     // main algorithm
-    fromEdgeListToAdjList(edgeList, numberOfNodes);
     getPaths(sourceNode, []);
     initializeVisited();
     getLoops(sourceNode, []);
@@ -58,6 +58,10 @@ function main(edgesList, numberOfNodes, source, sink) {
                     return true;
             }
             return false;
+        }
+
+        this.clone = function () {
+            return new path(this.nodes, this.gain, this.edgeList);
         }
     }
 
@@ -109,28 +113,30 @@ function main(edgesList, numberOfNodes, source, sink) {
      * @param currentPath
      */
     function getLoops(node, currentPath) {
-        visited[node] = true;
-        for (var i = 0; i < adjList[node].length; i++) {
-            var to = adjList[node][i].to;
-            if (!visited[to]) {
-                currentPath.push(adjList[node][i]);
-                getLoops(to, currentPath);
-                currentPath.pop();
-            } else {
-                var curLoop = [];
-                curLoop.push(adjList[node][i]);
-                for (var j = currentPath.length - 1; j >= 0; j--) {
-                    if (currentPath[j].to == to)
-                        break;
-                    curLoop.push(currentPath[j])
-                }
-                var newLoop = edgeListToPath(curLoop);
-                if (multipleLoop(newLoop))
-                    continue;
-                loops.push(newLoop);
-            }
+        for (var i = 0; i < numberOfNodes; i++) {
+            initializeVisited();
+            DFS(i, i, []);
         }
-        visited[node] = false;
+
+        function DFS(node, tempSink, currentPath) {
+            visited[node] = true;
+            for (var i = 0; i < adjList[node].length; i++) {
+                var to = adjList[node][i].to;
+                if (!visited[to]) {
+                    currentPath.push(adjList[node][i]);
+                    DFS(to, tempSink, currentPath);
+                    currentPath.pop();
+                } else if (to == tempSink) {
+                    currentPath.push(adjList[node][i]);
+                    var currentLoop = copyArray(currentPath);
+                    var loop = edgeListToPath(currentLoop);
+                    if (!multipleLoop(loops, loop))
+                        loops.push(loop);
+                    currentPath.pop();
+                }
+            }
+            visited[node] = false;
+        }
     }
 
     /**
@@ -146,16 +152,14 @@ function main(edgesList, numberOfNodes, source, sink) {
         }
         var newLoopList = [];
         for (var i = 0; i < loopList.length; i++) {
-            for (var j = i + 1; j < loopList.length; j++) {
-                if (!loopList[i].isTouch(loopList[j])) {
-                    var mergedLoop = mergeTwoLoops(loopList[i], loopList[j]);
+            for (var j = 0; j < loops.length; j++) {
+                if (!loopList[i].isTouch(loops[j])) {
+                    var mergedLoop = mergeTwoLoops(loopList[i], loops[j]);
+                    if (multipleLoop(mergedLoops, mergedLoop))
+                        continue;
                     newLoopList.push(mergedLoop);
-                    if (itr % 2 == 0)
-                        loopGain += mergedLoop.gain;
-                    else
-                        loopGain -= mergedLoop.gain;
+                    loopGain += ((itr % 2 == 0) ? 1 : -1) * mergedLoop.gain;
                     mergedLoops.push(mergedLoop);
-                    // TODO adding merged loops
                 }
             }
         }
@@ -189,7 +193,7 @@ function main(edgesList, numberOfNodes, source, sink) {
             nodes.push(item);
         });
         nodes.sort();
-        return new path(nodes, pathGain, edgeList);
+        return new path(nodes, pathGain, copyArray(edgeList));
     }
 
     /**
@@ -204,9 +208,12 @@ function main(edgesList, numberOfNodes, source, sink) {
             nodeSet.add(item);
         });
         var pathGain = firstLoop.gain * secondLoop.gain;
-        var edgeList = firstLoop.edgeList;
+        var edgeList = [];
+        firstLoop.edgeList.forEach(function (item) {
+            edgeList.push(new edge(item.from, item.to, item.gain));
+        });
         secondLoop.edgeList.forEach(function (item) {
-            edgeList.push(item);
+            edgeList.push(new edge(item.from, item.to, item.gain));
         });
         var nodes = [];
         nodeSet.forEach(function (item) {
@@ -240,32 +247,43 @@ function main(edgesList, numberOfNodes, source, sink) {
         paths.forEach(function (item) {
             overAllGain += (item.gain * item.delta);
         });
-        overAllGain /= getDelta(loops);
+        overAllGain /= getDelta(copyArray(loops));
         return overAllGain;
     }
 
-// Helpful functions
+    // Helpful functions
     /**
      * Check if a loop is multiple or not
      * @param loop
      * @returns {boolean}
      */
-    function multipleLoop(loop) {
+    function multipleLoop(loopSet, loop) {
         var ret = false;
-        loops.forEach(function (item) {
+        loopSet.forEach(function (item) {
             ret |= checkDuplicated(item, loop);
         });
         return ret;
 
         function checkDuplicated(firstLoop, secondLoop) {
-            var ret = true;
+            var counter = 0;
             if (firstLoop.nodes.length != secondLoop.nodes.length)
                 return false;
-            if (firstLoop.gain != secondLoop.gain)
+            if (firstLoop.edgeList.length != secondLoop.edgeList.length)
                 return false;
-            for (var i = 0; i < firstLoop.nodes.length; i++)
-                ret &= (firstLoop.nodes[i] === secondLoop.nodes[i]);
-            return ret;
+            firstLoop.edgeList.forEach(function (item) {
+                secondLoop.edgeList.forEach(function (itr) {
+                    if (sameEdge(item, itr))
+                        counter++;
+                });
+            });
+            if (counter == firstLoop.edgeList.length)
+                return true;
+            else
+                return false;
+        }
+
+        function sameEdge(edge1, edge2) {
+            return (edge1.from == edge2.from && edge1.to == edge2.to && edge1.gain == edge2.gain);
         }
     }
 
@@ -302,18 +320,18 @@ function main(edgesList, numberOfNodes, source, sink) {
         }
         return false;
     }
+}
 
-    /**
-     * Array deep copy
-     * @param firstArray
-     * @returns {any[]}
-     */
-    function copyArray(firstArray) {
-        var secondArray = new Array(firstArray.length)
-        for (var i = 0; i < firstArray.length; i++)
-            secondArray[i] = firstArray[i];
-        return secondArray;
-    }
+/**
+ * Array deep copy
+ * @param firstArray
+ * @returns {any[]}
+ */
+function copyArray(firstArray) {
+    var secondArray = new Array(firstArray.length)
+    for (var i = 0; i < firstArray.length; i++)
+        secondArray[i] = firstArray[i];
+    return secondArray;
 }
 
 
@@ -324,7 +342,7 @@ function main(edgesList, numberOfNodes, source, sink) {
 function getForwardPaths() {
     var forwardPaths = [];
     paths.forEach(function (item) {
-        forwardPaths.push(item.edgeList);
+        forwardPaths.push(copyArray(item.edgeList));
     });
     return forwardPaths;
 }
@@ -336,7 +354,7 @@ function getForwardPaths() {
 function getLoops() {
     var finalLoops = [];
     loops.forEach(function (item) {
-        finalLoops.push(item.edgeList);
+        finalLoops.push(copyArray(item.edgeList));
     });
     return finalLoops;
 }
@@ -348,7 +366,7 @@ function getLoops() {
 function getMergedLoops() {
     var loops = [];
     mergedLoops.forEach(function (item) {
-        loops.push(item.edgeList);
+        loops.push(copyArray(item.edgeList));
     });
     return loops;
 }
@@ -366,11 +384,16 @@ function getDeltas() {
 }
 
 // How to call main function
-main([new edge(0, 1, 10), new edge(1, 2, 20), new edge(2, 3, 30), new edge(1, 0, -10),
-    new edge(1, 3, 10), new edge(3, 0, -10), new edge(3, 2, -1)], 4, 0, 3);
+var edgeList = [new edge(0, 1, 10), new edge(1, 2, 20), new edge(2, 3, 30), new edge(1, 0, -10),
+    new edge(1, 3, 10), new edge(3, 0, -10), new edge(3, 2, -1), new edge(3, 4, 10),
+    new edge(4, 5, 10), new edge(5, 4, -1)];
+main(edgeList, 6, 0, 5);
 
 console.log(overAllGain);
+console.log("Paths");
 console.log(getForwardPaths());
+console.log("Loops");
 console.log(getLoops());
+console.log("MergedLoops");
 console.log(getMergedLoops());
 console.log(getDeltas());

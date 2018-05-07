@@ -171,6 +171,7 @@ function compute() {
         }
         resultHTML += "<h2>Loops</h2>";
         var loops = getLoops();
+        console.log(loops.length);
         for (var i = 0; i < loops.length; i++) {
             var loopGain = 1;
             for (var j = 0; j < loops[i].length; j++) {
@@ -179,12 +180,26 @@ function compute() {
             resultHTML += "<h3>Loop " + (i+1) + "  ->  Gain = " + loopGain + "</h3>";
             resultHTML += '<div id="LoopDiagramDiv'+ i + '" style="margin: auto; width:400px; height:200px; background-color: #DAE4E4;"></div></br>';
         }
+        mergedLoops = getMergedLoops();
+        for (var i = 0; i < mergedLoops.length; i++) {
+            for (var j = 0; j < mergedLoops[i].length; j++) {
+                resultHTML += "<h3>Merged Loop " + (i+1) + " - "+ (j+1) + "  ->  Gain = " + -1 + "</h3>";
+                resultHTML += '<div id="MergedLoopDiagramDiv' + i + "-" + j + '" style="margin: auto; width:400px; height:200px; background-color: #DAE4E4;"></div></br>';
+                mergedLoops[i][j]
+            }
+            mergedLoops[i]
+        }
         document.getElementById("ResultDiv").innerHTML = resultHTML;
         for (var i = 0; i < forwardPaths.length; i++) {
             createDiagram("PathDiagramDiv"+i,forwardPaths[i]);
         }
         for (var i = 0; i < loops.length; i++) {
             createDiagram("LoopDiagramDiv"+i,loops[i]);
+        }
+        for (var i = 0; i < mergedLoops.length; i++) {
+            for (var j = 0; j < mergedLoops[i].length; j++) {
+                createDiagram('MergedLoopDiagramDiv' + i + "-" + j,mergedLoops[i][j]);
+            }
         }
     }
 }

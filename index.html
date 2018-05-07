@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+	<title>Signal Flow Graph</title>
+
+	<script src="js/go-debug.js"></script>
+	<script src="js/script.js"></script>
+	<script src="js/SFGSolver.js"></script>
+	<!--
+	<link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+	<link rel="stylesheet" href="bootstrap/css/bootstrap-grid.min.css">
+	<link rel="stylesheet" href="bootstrap/css/bootstrap-reboot.min.css">
+	-->
+</head>
+<body onload="mainDiagram = init()">
+	<div>
+		<h1 style="margin: auto; width: 50%; text-align: center;">Signal Flow Graph</h1>
+	</div>
+	<div id="DiagramDiv" style="margin: auto; width:800px; height:400px; background-color: #DAE4E4;">
+	</div>
+	<br>
+	<div style="margin: auto; width: 50%;">
+		Input Node : <p id="InputNodeText">Please Choose an input node</p><br>
+		Output Node: <p id="OutputNodeText">Please Choose an output node</p><br>
+		<button id="Compute" onclick="compute()">Compute Gain</button>
+	</div>
+	<div id="ResultDiv" style="margin: auto; width: 50%; text-align: center;">
+		
+	</div>
+	<!--
+	<script src="bootstrap/js/bootstrap.min.js"></script>
+	<script src="bootstrap/js/bootstrap.bundles.min.js"></script>
+	-->
+</body>
+</html>

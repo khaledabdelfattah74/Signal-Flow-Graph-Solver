@@ -229,6 +229,7 @@ function main(edgesList, numberOfNodes, source, sink) {
     function calculatePathsDelta() {
         for (var i = 0; i < paths.length; i++) {
             var nonTouchedLoops = [];
+            mergedLoops = [];
             for (var j = 0; j < loops.length; j++) {
                 if (!paths[i].isTouch(loops[j]))
                     nonTouchedLoops.push(loops[j]);
@@ -247,6 +248,7 @@ function main(edgesList, numberOfNodes, source, sink) {
         paths.forEach(function (item) {
             overAllGain += (item.gain * item.delta);
         });
+        mergedLoops = [];
         overAllGain /= getDelta(copyArray(loops));
         return overAllGain;
     }
@@ -385,7 +387,7 @@ function getDeltas() {
 
 // How to call main function
 var edgeList = [new edge(0, 1, 10), new edge(1, 2, 20), new edge(2, 3, 30), new edge(1, 0, -10),
-    new edge(1, 3, 10), new edge(3, 0, -10), new edge(3, 2, -1), new edge(3, 4, 10),
+    new edge(1, 4, 10), new edge(3, 0, -10), new edge(3, 2, -1), new edge(3, 4, 10),
     new edge(4, 5, 10), new edge(5, 4, -1)];
 main(edgeList, 6, 0, 5);
 

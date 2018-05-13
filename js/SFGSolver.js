@@ -13,6 +13,7 @@ function edge(from, to, gain) {
     this.from = from;
     this.to = to;
     this.gain = gain;
+    this.id = 0;
 }
 
 
@@ -32,6 +33,7 @@ function main(edgesList, numberOfNodes, source, sink) {
     paths = [];
     loops = [];
     mergedLoops = [];
+    var visited;
 
     // main algorithm
     getPaths(sourceNode, []);
@@ -46,10 +48,11 @@ function main(edgesList, numberOfNodes, source, sink) {
      * @param gain
      * @param edgeList
      */
-    function path(nodes, gain, edgeList) {
+    function path(nodes, gain, edgeList, edges) {
         this.nodes = nodes;
         this.gain = gain;
         this.edgeList = edgeList;
+        this.edges = edges;
         this.delta;
 
         this.isTouch = function (anotherPath) {
@@ -61,7 +64,7 @@ function main(edgesList, numberOfNodes, source, sink) {
         }
 
         this.clone = function () {
-            return new path(this.nodes, this.gain, this.edgeList);
+            return new path(this.nodes, this.gain, this.edgeList, this.edges);
         }
     }
 
@@ -80,6 +83,7 @@ function main(edgesList, numberOfNodes, source, sink) {
             adjList[i] = [];
         }
         for (var i = 0; i < edgeList.length; i++) {
+            edgeList[i].id = i;
             adjList[edgeList[i].from].push(edgeList[i]);
         }
         return adjList;
@@ -183,17 +187,20 @@ function main(edgesList, numberOfNodes, source, sink) {
     function edgeListToPath(edgeList) {
         var nodeSet = new Set();
         var pathGain = 1;
+        var edges = [];
         for (var i = 0; i < edgeList.length; i++) {
             nodeSet.add(edgeList[i].from);
             nodeSet.add(edgeList[i].to);
             pathGain *= edgeList[i].gain;
+            edges.push(edgeList[i].id);
         }
         var nodes = [];
         nodeSet.forEach(function (item) {
             nodes.push(item);
         });
         nodes.sort();
-        return new path(nodes, pathGain, copyArray(edgeList));
+        edges.sort();
+        return new path(nodes, pathGain, copyArray(edgeList), edges);
     }
 
     /**
@@ -204,23 +211,31 @@ function main(edgesList, numberOfNodes, source, sink) {
      */
     function mergeTwoLoops(firstLoop, secondLoop) {
         var nodeSet = new Set(firstLoop.nodes);
+        var edges = [];
         secondLoop.nodes.forEach(function (item) {
             nodeSet.add(item);
         });
         var pathGain = firstLoop.gain * secondLoop.gain;
         var edgeList = [];
         firstLoop.edgeList.forEach(function (item) {
-            edgeList.push(new edge(item.from, item.to, item.gain));
+            var e = new edge(item.from, item.to, item.gain);
+            e.id = item.id;
+            edgeList.push(e);
+            edges.push(item.id);
         });
         secondLoop.edgeList.forEach(function (item) {
-            edgeList.push(new edge(item.from, item.to, item.gain));
+            var e = new edge(item.from, item.to, item.gain);
+            e.id = item.id;
+            edgeList.push(e);
+            edges.push(item.id);
         });
         var nodes = [];
         nodeSet.forEach(function (item) {
             nodes.push(item);
         });
         nodes.sort();
-        return new path(nodes, pathGain, edgeList);
+        edges.sort();
+        return new path(nodes, pathGain, copyArray(edgeList), edges);
     }
 
     /**
@@ -267,25 +282,23 @@ function main(edgesList, numberOfNodes, source, sink) {
         return ret;
 
         function checkDuplicated(firstLoop, secondLoop) {
-            var counter = 0;
             if (firstLoop.nodes.length != secondLoop.nodes.length)
                 return false;
             if (firstLoop.edgeList.length != secondLoop.edgeList.length)
                 return false;
-            firstLoop.edgeList.forEach(function (item) {
-                secondLoop.edgeList.forEach(function (itr) {
-                    if (sameEdge(item, itr))
-                        counter++;
-                });
-            });
-            if (counter == firstLoop.edgeList.length)
+            var counter = 0;
+            for (var i = 0; i < firstLoop.edges.length; i++) {
+                if (firstLoop.edges[i] == secondLoop.edges[i])
+                    counter++;
+            }
+            if (counter == firstLoop.edges.length)
                 return true;
             else
                 return false;
         }
 
         function sameEdge(edge1, edge2) {
-            return (edge1.from == edge2.from && edge1.to == edge2.to && edge1.gain == edge2.gain);
+            return edge1.id == edge2.id;
         }
     }
 

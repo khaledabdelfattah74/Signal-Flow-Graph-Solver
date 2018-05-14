@@ -2,6 +2,7 @@ var paths = [];
 var loops = [];
 var mergedLoops = [];
 var overAllGain = 0;
+var overAllDelta = 0;
 
 /**
  * Edge
@@ -264,7 +265,8 @@ function main(edgesList, numberOfNodes, source, sink) {
             overAllGain += (item.gain * item.delta);
         });
         mergedLoops = [];
-        overAllGain /= getDelta(copyArray(loops));
+        overAllDelta = getDelta(copyArray(loops));
+        overAllGain /= overAllDelta;
         return overAllGain;
     }
 

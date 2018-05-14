@@ -254,7 +254,8 @@ function compute() {
         }
 
         //document.getElementById("resultModalContent").innerHTML = resultHTML;
-        document.getElementById("exampleModalLabel").innerText = "Total Gain = "+ overAllGain;
+        document.getElementById("exampleModalLabel").innerText =
+                                 "Overall Gain = "+ overAllGain + "\n" + "Overall Delta = "+ overAllDelta;
         $('#resultModal').modal('show');
     }
 }

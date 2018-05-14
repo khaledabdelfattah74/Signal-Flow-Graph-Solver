@@ -4,14 +4,22 @@ var make = go.GraphObject.make; // for conciseness in defining templates
 var indexToNodeData = {};
 var mainDiagram;
 var mainNodeData;
-var resultDiagrams = [];
+var pathsDiagrams = [];
+var loopsDiagrams = [];
+var mergedloopsDiagrams = [];
 var computed = false;
+function refreshDiagrams(diagrams) {
+    for (var i = 0; i < diagrams.length; i++) {
+        diagrams[i].requestUpdate();
+    }
+}
 function init() {
-    $('#carouselExampleIndicators').on('slide.bs.carousel', function () {
-        for (var i = 0; i < resultDiagrams.length; i++) {
-            resultDiagrams[i].requestUpdate();
-        }
-    })
+    $('#pills-paths-tab').on('shown.bs.tab', function() {refreshDiagrams(pathsDiagrams)});
+    $('#pills-loops-tab').on('shown.bs.tab', function() {refreshDiagrams(loopsDiagrams)});
+    $('#pills-mergedloops-tab').on('shown.bs.tab', function() {refreshDiagrams(mergedloopsDiagrams)});
+    $('#carouselpathsIndicators').on('slide.bs.carousel', function() {refreshDiagrams(pathsDiagrams)});
+    $('#carouselloopsIndicators').on('slide.bs.carousel', function() {refreshDiagrams(loopsDiagrams)});
+    $('#carouselmergedloopsIndicators').on('slide.bs.carousel', function() {refreshDiagrams(mergedloopsDiagrams)});
     myDiagram =
         make(go.Diagram, "DiagramDiv", // must name or refer to the DIV HTML element
             {
@@ -153,12 +161,27 @@ function displayErrorMessage(errorMessage){
     $('#errorModal').modal('show')
 }
 function compute() {
+    //$('#resultModal').modal('show');
+    //return;
     if(computed){
-        document.getElementById("resultModalCarouselIndicators").innerHTML = "";
-        document.getElementById("resultModalCarouselInner").innerHTML = "";
-        for (var i = 0; i < resultDiagrams.length; i++) {
-            resultDiagrams[i].div = null;
+        document.getElementById("pathsCarouselInner").innerHTML = "";
+        document.getElementById("pathsTabIndicators").innerHTML = "";
+        for (var i = 0; i < pathsDiagrams.length; i++) {
+            pathsDiagrams[i].div = null;
         }
+        pathsDiagrams = [];
+        document.getElementById("loopsCarouselInner").innerHTML = "";
+        document.getElementById("loopsTabIndicators").innerHTML = "";
+        for (var i = 0; i < loopsDiagrams.length; i++) {
+            loopsDiagrams[i].div = null;
+        }
+        loopsDiagrams = [];
+        document.getElementById("mergedloopsCarouselInner").innerHTML = "";
+        document.getElementById("mergedloopsTabIndicators").innerHTML = "";
+        for (var i = 0; i < mergedloopsDiagrams.length; i++) {
+            mergedloopsDiagrams[i].div = null;
+        }
+        mergedloopsDiagrams = [];
     }
     if (inputNode == 0) {
         displayErrorMessage("Please Select Input Node First");
@@ -179,7 +202,7 @@ function compute() {
         main(edgesArr,mainDiagram.model.nodeDataArray.length,toNormalIndex(inputNode),toNormalIndex(outputNode));
         var forwardPaths = getForwardPaths();
         var forwardPathsDelta = getDeltas();
-        tabNum = 0;
+        
         for (var i = 0; i < forwardPaths.length; i++) {
             var pathGain = 1;
             for (var j = 0; j < forwardPaths[i].length; j++) {
@@ -195,8 +218,7 @@ function compute() {
             infoElement.appendChild(diagramTitle);
             infoElement.appendChild(diagramInfo1);
             infoElement.appendChild(diagramInfo2);
-            createResultsDiagram("PathDiagramDiv" + i, tabNum, forwardPaths[i], infoElement);
-            tabNum++;
+            pathsDiagrams.push(createResultsDiagram("paths","PathDiagramDiv" + i, i, forwardPaths[i], infoElement));
         }
 
         var loops = getLoops();
@@ -212,8 +234,7 @@ function compute() {
             diagramInfo.innerText = "Gain = " + loopGain;
             infoElement.appendChild(diagramTitle);
             infoElement.appendChild(diagramInfo);
-            createResultsDiagram("LoopDiagramDiv" + i, tabNum, loops[i], infoElement);
-            tabNum++;
+            loopsDiagrams.push(createResultsDiagram("loops","LoopDiagramDiv" + i, i, loops[i], infoElement));
         }
 
         var mergedLoops = getMergedLoops();
@@ -229,8 +250,7 @@ function compute() {
             diagramInfo.innerText = "Gain = " + mergedLoopGain;
             infoElement.appendChild(diagramTitle);
             infoElement.appendChild(diagramInfo);
-            createResultsDiagram("MergedLoopDiagramDiv" + i, tabNum, mergedLoops[i], infoElement);
-            tabNum++;
+            mergedloopsDiagrams.push(createResultsDiagram("mergedloops","MergedLoopDiagramDiv" + i, i, mergedLoops[i], infoElement));
         }
 
         //document.getElementById("resultModalContent").innerHTML = resultHTML;
@@ -238,16 +258,16 @@ function compute() {
         $('#resultModal').modal('show');
     }
 }
-function createResultsDiagram(divID,tabNum,graphEdges,infoElement) {
-    tabsIndicators = document.getElementById("resultModalCarouselIndicators");
+function createResultsDiagram(tabID,divID,tabNum,graphEdges,infoElement) {
+    tabsIndicators = document.getElementById(tabID+"TabIndicators");
     tabIndicator = document.createElement('li');
-    tabIndicator.setAttribute("data-target","#carouselExampleIndicators");
+    tabIndicator.setAttribute("data-target","#carousel"+tabID+"Indicators");
     tabIndicator.setAttribute("data-slide-to",tabNum);
     if(tabNum == 0)
         tabIndicator.setAttribute("class","active");
     tabsIndicators.appendChild(tabIndicator);
 
-    resultTabsDivs = document.getElementById("resultModalCarouselInner");
+    resultTabsDivs = document.getElementById(tabID+"CarouselInner");
     tabDiv = document.createElement('div');
     tabDiv.appendChild(infoElement);
     if(tabNum == 0)
@@ -260,7 +280,7 @@ function createResultsDiagram(divID,tabNum,graphEdges,infoElement) {
     diagramDiv.setAttribute("style","height: 400px; background-color:#ECF0F1;");
     tabDiv.appendChild(diagramDiv);
     resultTabsDivs.appendChild(tabDiv);
-    resultDiagrams.push(createDiagram(divID,graphEdges));
+    return createDiagram(divID,graphEdges);
 }
 function toNormalIndex(x) {
     return (x*-1)-1;

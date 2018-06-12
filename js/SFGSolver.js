@@ -151,15 +151,15 @@ function main(edgesList, numberOfNodes, source, sink) {
      * @param loopGain
      * @returns {*}
      */
-    function evaluateDelta(loopList, itr, loopGain) {
+    function evaluateDelta(loopList, loopsSet, itr, loopGain) {
         if (loopList.length == 0) {
             return loopGain;
         }
         var newLoopList = [];
         for (var i = 0; i < loopList.length; i++) {
-            for (var j = 0; j < loops.length; j++) {
-                if (!loopList[i].isTouch(loops[j])) {
-                    var mergedLoop = mergeTwoLoops(loopList[i], loops[j]);
+            for (var j = 0; j < loopsSet.length; j++) {
+                if (!loopList[i].isTouch(loopsSet[j])) {
+                    var mergedLoop = mergeTwoLoops(loopList[i], loopsSet[j]);
                     if (multipleLoop(mergedLoops, mergedLoop))
                         continue;
                     newLoopList.push(mergedLoop);
@@ -168,7 +168,7 @@ function main(edgesList, numberOfNodes, source, sink) {
                 }
             }
         }
-        return evaluateDelta(newLoopList, itr + 1, loopGain);
+        return evaluateDelta(newLoopList, loopsSet, itr + 1, loopGain);
     }
 
     /**
@@ -177,7 +177,7 @@ function main(edgesList, numberOfNodes, source, sink) {
      * @returns {*}
      */
     function getDelta(loopsList) {
-        return 1 - allLoopsGain(loopsList) + evaluateDelta(loopsList, 0, 0);
+        return 1 - allLoopsGain(loopsList) + evaluateDelta(loopsList, loopsList, 0, 0);
     }
 
     /**
